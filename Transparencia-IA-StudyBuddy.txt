@@ -1,0 +1,75 @@
+Documento de Transparencia sobre Uso de IA – StudyBuddy
+
+Resumen
+La base del proyecto fue creada por Sebastian. A partir de esa base, Manuela y Juan David realizaron cambios sencillos acordes al nivel principiante en Java y refinaron la presentación web. Este documento detalla qué parte se generó con IA, qué modificaciones humanas se hicieron y cómo se comprobó que funciona correctamente.
+
+Parte generada por IA
+- Java
+  - App de escritorio con diálogos para notas: java/StudyBuddy.java:1
+  - Persistencia local en "notes.dat" con serialización: java/StudyBuddy.java:24
+  - Resumen y palabras clave por frecuencia de términos: java/StudyBuddy.java:129 y java/StudyBuddy.java:183
+  - Generación de ejercicios tipo “Define”/“Explica”: java/StudyBuddy.java:116
+- Python (CLI)
+  - Gestión de notas con JSON: python/studybuddy.py:5 y python/studybuddy.py:7
+  - Resumen y palabras clave: python/studybuddy.py:85 y python/studybuddy.py:93
+  - Ejercicios a partir de keywords: python/studybuddy.py:98
+  - Menú y flujo básico: python/studybuddy.py:106
+- Web (HTML/JS)
+  - UI moderna con tema claro/oscuro y almacenamiento local: web/index.html:7
+  - Autenticación (login/registro) con hash SHA‑256 y sesión por usuario: web/index.html:191–200
+  - Filtros por materia, tags, favoritos y orden; estadísticas en barra: web/index.html:204–211 y web/index.html:223–224
+  - Práctica tipo quiz: web/index.html:185–189
+
+Modificaciones humanas (simples)
+- Sebastian
+  - Ajuste de import correcto en Java: javax.swing.JOptionPane (java/StudyBuddy.java:1)
+  - Revisión de textos del menú y mensajes de confirmación.
+  - Verificación básica: agregar, listar, ver notas.
+- Manuela
+  - Cambios en etiquetas y placeholders para mayor claridad: web/index.html:66–79 y web/index.html:48
+  - Activación y prueba de tema claro/oscuro: web/index.html:250
+  - Prueba de exportación/importación JSON: web/index.html:245–249
+- Juan David
+  - Validaciones simples al crear/editar nota (faltantes de título/contenido): web/index.html:225 y web/index.html:232
+  - Verificación de favoritos y búsqueda: web/index.html:230–231 y web/index.html:240
+  - Pruebas en CLI (agregar, listar, ver): python/studybuddy.py:106–135
+
+Cómo se comprobó que funciona
+- Java
+  - Compilar: javac java/StudyBuddy.java
+  - Ejecutar: java -cp java StudyBuddy
+  - Pruebas manuales: agregar, listar, ver, resumen, palabras clave, ejercicios; confirmación de guardado en notes.dat.
+- Python
+  - Verificación de sintaxis: python -m py_compile python/studybuddy.py
+  - Ejecución y uso del menú para operaciones básicas.
+- Web
+  - Servidor local: cd web y python -m http.server 8000
+  - Navegar a http://localhost:8000/
+  - Flujo completo: registro/login, crear/editar/eliminar notas, favoritos, filtros, búsqueda, exportar/importar, resumen, claves, ejercicios y práctica.
+
+Mejora de estética
+- Base de estilos moderna (gradiente, tarjetas, responsive) implementada con IA: web/index.html:7–42
+- Sebastian definió los criterios visuales generales para uso universitario.
+- Manuela ajustó textos y placeholders; verificó legibilidad y tema.
+- Juan David probó visualmente el tema claro/oscuro y comportamiento en pantallas pequeñas.
+
+Autores
+- Sebastian: creación de la base del proyecto y verificación inicial.
+- Manuela: mejoras simples de textos, tema y exportación/importación.
+- Juan David: validaciones básicas, favoritos/búsqueda y pruebas en CLI/web.
+
+Alcance y limitaciones
+- Resumen y palabras clave usan TF (frecuencia de términos) sin librerías externas; adecuado para nivel principiante.
+- Autenticación web sin backend: contraseñas se guardan como hash en localStorage (no apto para producción).
+- Apps funcionan en local (Java: serialización; Python: JSON; Web: localStorage y Web Crypto).
+
+Cómo reproducir
+- Java
+  - Compilar: javac java/StudyBuddy.java
+  - Ejecutar: java -cp java StudyBuddy
+- Python
+  - Ejecutar: python python/studybuddy.py
+- Web
+  - cd web
+  - python -m http.server 8000
+  - Abrir: http://localhost:8000/
