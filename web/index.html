@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StudyBuddy</title>
+<style>
+:root{--bg:#f6f7fb;--card:#ffffff;--text:#0f1220;--muted:#6b7280;--border:#e3e6ee;--accent:#2b4eff;--accent-2:#00d4ff}
+[data-theme="dark"]{--bg:#0b1020;--card:#121a2b;--text:#e5e7eb;--muted:#9aa2b2;--border:#1f2a40;--accent:#5b7aff;--accent-2:#14b8a6}
+html,body{height:100%}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:var(--bg);color:var(--text)}
+header{display:flex;align-items:center;gap:12px;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;padding:14px 18px}
+.brand{font-weight:700}
+.toolbar{margin-left:auto;display:flex;gap:8px;align-items:center}
+.toolbar input{min-width:220px}
+.userbadge{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.15);padding:6px 10px;border-radius:999px}
+.avatar{width:28px;height:28px;border-radius:50%;background:#fff;color:#000;display:flex;align-items:center;justify-content:center;font-weight:700}
+.stats{display:flex;gap:8px;margin-left:12px}
+.stat{background:rgba(255,255,255,0.15);padding:6px 10px;border-radius:8px}
+.container{display:grid;grid-template-columns:260px 1fr 1fr;gap:16px;padding:16px}
+@media (max-width:900px){.container{grid-template-columns:1fr}}
+section{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:0 6px 20px rgba(0,0,0,0.06)}
+h2{margin:0 0 8px 0;font-size:16px}
+input,textarea,select,button{width:100%;box-sizing:border-box;font:inherit}
+input,textarea,select{border:1px solid var(--border);border-radius:10px;padding:10px;background:transparent;color:var(--text)}
+textarea{min-height:160px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.actions{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:8px}
+button{background:var(--accent);color:#fff;border:none;padding:10px;border-radius:10px;cursor:pointer}
+button.secondary{background:#374151}
+button.warn{background:#ef4444}
+button:hover{filter:brightness(1.06)}
+pre{background:#0f172a;color:#cbd5e1;padding:12px;border-radius:10px;overflow:auto;min-height:160px}
+.small{font-size:12px;color:var(--muted)}
+.pill{display:inline-block;background:var(--border);color:var(--text);padding:4px 8px;border-radius:999px;font-size:12px}
+.sidebar{position:sticky;top:12px;height:fit-content}
+.filter-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:50}
+.modal{width:95%;max-width:820px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+.title{font-size:18px;font-weight:700;margin-bottom:8px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">StudyBuddy</div>
+  <div class="toolbar">
+    <input id="search" placeholder="Buscar en títulos o contenido">
+    <button id="themeBtn">Tema</button>
+    <button id="exportBtn">Exportar</button>
+    <button id="importBtn">Importar</button>
+    <input id="importInput" type="file" accept="application/json" style="display:none">
+    <div class="userbadge" id="userBadge" style="display:none">
+      <div class="avatar" id="userAvatar">U</div>
+      <div id="userName">Usuario</div>
+      <button id="logoutBtn" class="secondary" style="width:auto;padding:6px 10px">Salir</button>
+    </div>
+    <div class="stats">
+      <div class="stat">Notas: <span id="statNotes">0</span></div>
+      <div class="stat">Favoritos: <span id="statFav">0</span></div>
+      <div class="stat">Palabras clave: <span id="statKw">0</span></div>
+    </div>
+  </div>
+</header>
+<div class="container">
+<section class="sidebar">
+<h2>Nueva nota</h2>
+<div class="row">
+  <div>
+    <span class="pill">Título</span>
+    <input id="title" placeholder="Ej: Álgebra lineal">
+  </div>
+  <div>
+    <span class="pill">Acciones</span>
+    <button id="addBtn">Agregar nota</button>
+  </div>
+</div>
+<span class="pill">Contenido</span>
+<textarea id="content" placeholder="Pega o escribe tus apuntes aquí"></textarea>
+<h2 style="margin-top:12px">Filtros</h2>
+<div class="filter-row">
+  <div>
+    <span class="pill">Materia</span>
+    <input id="filterSubject" placeholder="Ej: Matemáticas">
+  </div>
+  <div>
+    <span class="pill">Tags</span>
+    <input id="filterTags" placeholder="Separados por coma">
+  </div>
+</div>
+<div class="filter-row">
+  <div>
+    <span class="pill">Orden</span>
+    <select id="sortBy">
+      <option value="title">Título</option>
+      <option value="favorite">Favorito</option>
+      <option value="date">Reciente</option>
+    </select>
+  </div>
+  <div>
+    <span class="pill">Solo favoritos</span>
+    <select id="onlyFav">
+      <option value="no">No</option>
+      <option value="yes">Sí</option>
+    </select>
+  </div>
+</div>
+</section>
+<section>
+<h2>Notas</h2>
+<select id="notesList" size="10"></select>
+<div class="actions">
+  <button id="viewBtn">Ver</button>
+  <button id="sumBtn">Resumen</button>
+  <button id="kwBtn">Claves</button>
+  <button id="exBtn">Ejercicios</button>
+  <button id="favBtn">Favorito</button>
+  <button id="delBtn" class="warn">Eliminar</button>
+</div>
+<div class="row" style="margin-top:8px">
+  <div>
+    <span class="pill">Editar título</span>
+    <input id="editTitle" placeholder="Título seleccionado">
+  </div>
+  <div>
+    <span class="pill">Guardar cambios</span>
+    <button id="saveBtn">Guardar</button>
+  </div>
+</div>
+<span class="pill" style="margin-top:8px;display:inline-block">Editar contenido</span>
+<textarea id="editContent" placeholder="Contenido de la nota seleccionada"></textarea>
+</section>
+<section>
+<div class="actions" style="grid-template-columns:repeat(4,1fr)">
+  <button id="dupBtn" class="secondary">Duplicar</button>
+  <button id="exportNoteBtn" class="secondary">Exportar nota</button>
+  <button id="printBtn" class="secondary">Imprimir</button>
+  <button id="autosaveToggle" class="secondary">Autosave: Off</button>
+</div>
+</section>
+<section style="grid-column:1/3">
+<h2>Salida</h2>
+<pre id="outputText"></pre>
+</section>
+<div class="overlay" id="authModal">
+  <div class="modal">
+    <div class="card">
+      <div class="title">Ingresar</div>
+      <span class="pill">Correo</span>
+      <input id="loginEmail" type="email" placeholder="tu@correo.com">
+      <span class="pill" style="margin-top:8px;display:inline-block">Contraseña</span>
+      <input id="loginPass" type="password" placeholder="********">
+      <button id="loginBtn" style="margin-top:10px">Entrar</button>
+    </div>
+    <div class="card">
+      <div class="title">Registro</div>
+      <span class="pill">Nombre</span>
+      <input id="regName" placeholder="Tu nombre">
+      <span class="pill" style="margin-top:8px;display:inline-block">Correo</span>
+      <input id="regEmail" type="email" placeholder="tu@correo.com">
+      <span class="pill" style="margin-top:8px;display:inline-block">Contraseña</span>
+      <input id="regPass" type="password" placeholder="********">
+      <span class="pill" style="margin-top:8px;display:inline-block">Confirmar contraseña</span>
+      <input id="regPass2" type="password" placeholder="********">
+      <button id="regBtn" style="margin-top:10px">Crear cuenta</button>
+    </div>
+  </div>
+</div>
+<section style="grid-column:1/3">
+<h2>Práctica</h2>
+<div class="row">
+  <div>
+    <span class="pill">Pregunta</span>
+    <input id="quizPrompt" readonly>
+  </div>
+  <div>
+    <span class="pill">Progreso</span>
+    <input id="quizProgress" readonly>
+  </div>
+</div>
+<span class="pill" style="margin-top:8px;display:inline-block">Respuesta</span>
+<textarea id="quizAnswer" placeholder="Escribe tu respuesta"></textarea>
+<div class="actions" style="grid-template-columns:repeat(3,1fr)">
+  <button id="startQuiz">Iniciar</button>
+  <button id="nextQuiz" class="secondary">Siguiente</button>
+  <button id="endQuiz" class="warn">Terminar</button>
+</div>
+</section>
+</div>
+<script>
+const STORAGE_KEY='studybuddy_notes';
+let theme=localStorage.getItem('studybuddy_theme')||'light';
+document.body.setAttribute('data-theme',theme);
+const USERS_KEY='studybuddy_users';
+const SESSION_KEY='studybuddy_session';
+let currentUser=null;
+let autosave=false;let dirty=false;let metadataKey='studybuddy_meta';
+function notesKey(){return STORAGE_KEY+'_'+(currentUser?currentUser.id:'guest')}
+function metaKey(){return metadataKey+'_'+(currentUser?currentUser.id:'guest')}
+function loadNotes(){try{const s=localStorage.getItem(notesKey());const arr=s?JSON.parse(s):[];return Array.isArray(arr)?arr.map(n=>({title:n.title||'',content:n.content||'',favorite:!!n.favorite,subject:n.subject||'',tags:Array.isArray(n.tags)?n.tags:[],date:n.date||Date.now()})):[]}catch(e){return[]}}
+function saveNotes(notes){localStorage.setItem(notesKey(),JSON.stringify(notes))}
+function loadMeta(){try{const s=localStorage.getItem(metaKey());return s?JSON.parse(s):{subject:'',tags:'',sortBy:'title',onlyFav:'no'}}catch(e){return{subject:'',tags:'',sortBy:'title',onlyFav:'no'}}}
+function saveMeta(m){localStorage.setItem(metaKey(),JSON.stringify(m))}
+let filterQuery='';
+function renderList(){const list=document.getElementById('notesList');let notes=loadNotes();list.innerHTML='';const q=filterQuery.trim().toLowerCase();const meta=loadMeta();const tagSet=new Set(meta.tags.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean));notes=notes.filter(n=>{const matchText=!q||n.title.toLowerCase().includes(q)||n.content.toLowerCase().includes(q);const matchSubject=!meta.subject||n.subject.toLowerCase().includes(meta.subject.toLowerCase());const matchFav=meta.onlyFav==='no'||n.favorite;const noteTags=(n.tags||[]).map(t=>t.toLowerCase());const matchTags=tagSet.size===0||[...tagSet].every(t=>noteTags.includes(t));return matchText&&matchSubject&&matchFav&&matchTags});
+if(meta.sortBy==='title')notes.sort((a,b)=>a.title.localeCompare(b.title));
+if(meta.sortBy==='favorite')notes.sort((a,b)=>Number(b.favorite)-Number(a.favorite));
+if(meta.sortBy==='date')notes.sort((a,b)=>b.date-a.date);
+notes.forEach((n,i)=>{const o=document.createElement('option');o.value=i;o.textContent=(n.favorite?'★ ':'')+n.title+(n.subject?` · ${n.subject}`:'');list.appendChild(o)});
+updateStats(notes);updateUserBadge(notes)}
+function selectedIndex(){const list=document.getElementById('notesList');const idx=list.value;if(idx===''||idx==null)return -1;const i=parseInt(idx,10);return isNaN(i)?-1:i}
+function selectedNote(){const i=selectedIndex();const notes=loadNotes();if(i<0||i>=notes.length)return null;return notes[i]}
+function clean(t){return t.toLowerCase().replace(/[^a-záéíóúñüA-ZÁÉÍÓÚÑÜ0-9 ]/g,' ').trim()}
+function splitSentences(text){return text.split(/(?<=[.!?])\s+/).map(s=>s.trim()).filter(Boolean)}
+const STOPWORDS=new Set(['el','la','los','las','un','una','unos','unas','de','del','al','a','y','o','u','que','se','es','en','por','para','con','sin','no','sí','su','sus','lo','como','más','menos','muy','ya','pero','también','si','porque','cuando','donde','desde','hasta','entre','sobre','antes','después','esto','eso','estos','esas','esta','ese','estar','ser','hay'])
+function termFreq(text){const tokens=clean(text).split(/\s+/);const tf={};for(const t of tokens){if(!t||STOPWORDS.has(t))continue;tf[t]=(tf[t]||0)+1}return tf}
+function scoreSentence(sentence,tf){const tokens=clean(sentence).split(/\s+/);let s=0;for(const t of tokens){if(!t||STOPWORDS.has(t))continue;s+=tf[t]||0}return s}
+function summarize(text,max=3){const sentences=splitSentences(text);if(!sentences.length)return'';const tf=termFreq(text);const scored=sentences.map(s=>({s,score:scoreSentence(s,tf)})).sort((a,b)=>b.score-a.score).slice(0,Math.min(max,sentences.length)).map(x=>x.s.trim());return scored.join(' ')}
+function keywords(text,n=8){const tf=termFreq(text);const items=Object.entries(tf).sort((a,b)=>b[1]-a[1]).slice(0,n).map(([k])=>k);return items}
+function exercises(note){const k=keywords(note.content,5);const ex=k.map(kw=>'Define: '+kw);const s=summarize(note.content,2);if(s)ex.push('Explica: '+s);return ex}
+function showOutput(lines){const out=document.getElementById('outputText');out.textContent=Array.isArray(lines)?lines.join('\n'):String(lines||'')}
+function fillEditor(){const n=selectedNote();document.getElementById('editTitle').value=n?n.title:'';document.getElementById('editContent').value=n?n.content:''}
+function fillMeta(){const m=loadMeta();document.getElementById('filterSubject').value=m.subject;document.getElementById('filterTags').value=m.tags;document.getElementById('sortBy').value=m.sortBy;document.getElementById('onlyFav').value=m.onlyFav}
+function updateStats(notes){const total=notes.length;const fav=notes.filter(n=>n.favorite).length;const kw=notes.reduce((acc,n)=>acc+keywords(n.content,6).length,0);document.getElementById('statNotes').textContent=total;document.getElementById('statFav').textContent=fav;document.getElementById('statKw').textContent=kw}
+document.getElementById('addBtn').onclick=()=>{const title=document.getElementById('title').value.trim();const content=document.getElementById('content').value.trim();if(!title||!content){showOutput('Completa título y contenido');return}const subj=document.getElementById('filterSubject').value.trim();const tagsStr=document.getElementById('filterTags').value.trim();const tags=tagsStr?tagsStr.split(',').map(t=>t.trim()).filter(Boolean):[];const notes=loadNotes();notes.push({title,content,favorite:false,subject:subj,tags,date:Date.now()});saveNotes(notes);renderList();document.getElementById('title').value='';document.getElementById('content').value='';showOutput('Nota guardada')}
+document.getElementById('viewBtn').onclick=()=>{const n=selectedNote();if(!n){showOutput('Selecciona una nota');return}showOutput(n.content);fillEditor()}
+document.getElementById('sumBtn').onclick=()=>{const n=selectedNote();if(!n){showOutput('Selecciona una nota');return}showOutput(summarize(n.content));fillEditor()}
+document.getElementById('kwBtn').onclick=()=>{const n=selectedNote();if(!n){showOutput('Selecciona una nota');return}showOutput(keywords(n.content).join(', '));fillEditor()}
+document.getElementById('exBtn').onclick=()=>{const n=selectedNote();if(!n){showOutput('Selecciona una nota');return}const ex=exercises(n);showOutput(ex.map((e,i)=>`${i+1}) ${e}`));fillEditor()}
+document.getElementById('favBtn').onclick=()=>{const i=selectedIndex();const notes=loadNotes();if(i<0||i>=notes.length){showOutput('Selecciona una nota');return}notes[i].favorite=!notes[i].favorite;saveNotes(notes);renderList();showOutput(notes[i].favorite?'Marcada como favorita':'Favorito quitado')}
+document.getElementById('delBtn').onclick=()=>{const i=selectedIndex();const notes=loadNotes();if(i<0||i>=notes.length){showOutput('Selecciona una nota');return}notes.splice(i,1);saveNotes(notes);renderList();document.getElementById('editTitle').value='';document.getElementById('editContent').value='';showOutput('Nota eliminada')}
+document.getElementById('saveBtn').onclick=()=>{const i=selectedIndex();const notes=loadNotes();if(i<0||i>=notes.length){showOutput('Selecciona una nota');return}const t=document.getElementById('editTitle').value.trim();const c=document.getElementById('editContent').value.trim();if(!t||!c){showOutput('Completa título y contenido');return}notes[i].title=t;notes[i].content=c;saveNotes(notes);renderList();showOutput('Cambios guardados')}
+document.getElementById('dupBtn').onclick=()=>{const i=selectedIndex();const notes=loadNotes();if(i<0||i>=notes.length){showOutput('Selecciona una nota');return}const n=notes[i];notes.push({title:n.title+' (Copia)',content:n.content,favorite:false,subject:n.subject,tags:n.tags,date:Date.now()});saveNotes(notes);renderList();showOutput('Nota duplicada')}
+document.getElementById('exportNoteBtn').onclick=()=>{const n=selectedNote();if(!n){showOutput('Selecciona una nota');return}const blob=new Blob([JSON.stringify(n,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(n.title||'nota')+'.json';document.body.appendChild(a);a.click();a.remove()}
+document.getElementById('printBtn').onclick=()=>{const n=selectedNote();if(!n){showOutput('Selecciona una nota');return}const w=window.open('', '_blank');w.document.write(`<pre>${n.title}\n\n${n.content}</pre>`);w.document.close();w.focus();w.print();w.close()}
+document.getElementById('autosaveToggle').onclick=()=>{autosave=!autosave;document.getElementById('autosaveToggle').textContent='Autosave: '+(autosave?'On':'Off')}
+document.getElementById('editTitle').oninput=()=>{dirty=true;if(autosave)document.getElementById('saveBtn').click()}
+document.getElementById('editContent').oninput=()=>{dirty=true;if(autosave)document.getElementById('saveBtn').click()}
+document.getElementById('notesList').onchange=()=>fillEditor()
+document.getElementById('search').oninput=e=>{filterQuery=e.target.value;renderList()}
+document.getElementById('filterSubject').oninput=e=>{const m=loadMeta();m.subject=e.target.value;saveMeta(m);renderList()}
+document.getElementById('filterTags').oninput=e=>{const m=loadMeta();m.tags=e.target.value;saveMeta(m);renderList()}
+document.getElementById('sortBy').onchange=e=>{const m=loadMeta();m.sortBy=e.target.value;saveMeta(m);renderList()}
+document.getElementById('onlyFav').onchange=e=>{const m=loadMeta();m.onlyFav=e.target.value;saveMeta(m);renderList()}
+function exportNotes(){const notes=loadNotes();const blob=new Blob([JSON.stringify(notes,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='studybuddy_notes.json';document.body.appendChild(a);a.click();a.remove()}
+function importNotesFile(file){const r=new FileReader();r.onload=()=>{try{const data=JSON.parse(r.result);if(!Array.isArray(data)){showOutput('Archivo inválido');return}const mapped=data.map(n=>({title:(n.title||'').toString(),content:(n.content||'').toString(),favorite:!!n.favorite})).filter(n=>n.title&&n.content);const existing=loadNotes();saveNotes(existing.concat(mapped));renderList();showOutput('Importación completada')}catch(err){showOutput('Error al importar')}};r.readAsText(file)}
+document.getElementById('exportBtn').onclick=exportNotes
+document.getElementById('importBtn').onclick=()=>document.getElementById('importInput').click()
+document.getElementById('importInput').onchange=e=>{const f=e.target.files&&e.target.files[0];if(f)importNotesFile(f)}
+document.getElementById('themeBtn').onclick=()=>{theme=theme==='dark'?'light':'dark';document.body.setAttribute('data-theme',theme);localStorage.setItem('studybuddy_theme',theme)}
+let quiz={list:[],idx:0}
+function startQuiz(){const n=selectedNote();if(!n){showOutput('Selecciona una nota');return}const ks=keywords(n.content,8);quiz.list=ks;quiz.idx=0;updateQuiz()}
+function updateQuiz(){if(!quiz.list.length){document.getElementById('quizPrompt').value='';document.getElementById('quizProgress').value='0/0';document.getElementById('quizAnswer').value='';return}const k=quiz.list[Math.min(quiz.idx,quiz.list.length-1)];document.getElementById('quizPrompt').value='Define: '+k;document.getElementById('quizProgress').value=(quiz.idx+1)+'/'+quiz.list.length}
+function nextQuiz(){if(!quiz.list.length)return;quiz.idx=Math.min(quiz.idx+1,quiz.list.length);if(quiz.idx>=quiz.list.length){showOutput('Práctica finalizada');document.getElementById('quizPrompt').value='';document.getElementById('quizProgress').value='';return}document.getElementById('quizAnswer').value='';updateQuiz()}
+function endQuiz(){quiz.list=[];quiz.idx=0;document.getElementById('quizPrompt').value='';document.getElementById('quizProgress').value='';document.getElementById('quizAnswer').value='';showOutput('Práctica terminada')}
+document.getElementById('startQuiz').onclick=startQuiz
+document.getElementById('nextQuiz').onclick=nextQuiz
+document.getElementById('endQuiz').onclick=endQuiz
+async function sha256(s){const enc=new TextEncoder();const buf=await crypto.subtle.digest('SHA-256',enc.encode(s));const arr=[...new Uint8Array(buf)];return arr.map(b=>b.toString(16).padStart(2,'0')).join('')}
+function getUsers(){try{const s=localStorage.getItem(USERS_KEY);const arr=s?JSON.parse(s):[];return Array.isArray(arr)?arr:[]}catch(e){return[]}}
+function saveUsers(u){localStorage.setItem(USERS_KEY,JSON.stringify(u))}
+function setSession(u){currentUser=u;localStorage.setItem(SESSION_KEY,JSON.stringify({id:u.id}))}
+function getSession(){try{const s=localStorage.getItem(SESSION_KEY);return s?JSON.parse(s):null}catch(e){return null}}
+function clearSession(){currentUser=null;localStorage.removeItem(SESSION_KEY)}
+function updateUserBadge(notes){const el=document.getElementById('userBadge');const name=document.getElementById('userName');const av=document.getElementById('userAvatar');if(!currentUser){el.style.display='none';return}el.style.display='flex';name.textContent=currentUser.name;av.textContent=(currentUser.name||'U').trim().slice(0,1).toUpperCase();const fav=notes.filter(n=>n.favorite).length}
+async function doLogin(){const email=document.getElementById('loginEmail').value.trim().toLowerCase();const pass=document.getElementById('loginPass').value;const users=getUsers();const u=users.find(x=>x.email===email);if(!u){showOutput('Usuario no encontrado');return}const h=await sha256(pass);if(h!==u.pass){showOutput('Contraseña incorrecta');return}setSession(u);document.getElementById('authModal').style.display='none';renderList();showOutput('Bienvenido, '+u.name)}
+async function doRegister(){const name=document.getElementById('regName').value.trim();const email=document.getElementById('regEmail').value.trim().toLowerCase();const pass=document.getElementById('regPass').value;const pass2=document.getElementById('regPass2').value;if(!name||!email||!pass||!pass2){showOutput('Completa todos los campos');return}if(pass!==pass2){showOutput('Las contraseñas no coinciden');return}const users=getUsers();if(users.some(x=>x.email===email)){showOutput('El correo ya está registrado');return}const h=await sha256(pass);const id='u_'+Date.now();const u={id,name,email,pass:h};users.push(u);saveUsers(users);setSession(u);document.getElementById('authModal').style.display='none';renderList();showOutput('Cuenta creada, bienvenido '+name)}
+function passStrength(p){let s=0;if(p.length>=8)s++;if(/[A-Z]/.test(p))s++;if(/[a-z]/.test(p))s++;if(/[0-9]/.test(p))s++;if(/[^A-Za-z0-9]/.test(p))s++;return s}
+document.getElementById('regPass').oninput=()=>{const p=document.getElementById('regPass').value;const s=passStrength(p);const msg=['Muy débil','Débil','Media','Buena','Fuerte'];showOutput('Fuerza: '+msg[Math.min(s,4)])}
+function ensureSession(){const s=getSession();const users=getUsers();if(!s){document.getElementById('authModal').style.display='flex';return}const u=users.find(x=>x.id===s.id);if(!u){document.getElementById('authModal').style.display='flex';return}currentUser=u}
+function logout(){clearSession();document.getElementById('userBadge').style.display='none';document.getElementById('authModal').style.display='flex'}
+document.getElementById('loginBtn').onclick=()=>doLogin()
+document.getElementById('regBtn').onclick=()=>doRegister()
+document.getElementById('logoutBtn').onclick=()=>logout()
+ensureSession();
+renderList();
+fillMeta();
+</script>
+</body>
+</html>
