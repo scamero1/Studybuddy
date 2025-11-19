@@ -11,7 +11,6 @@ import java.io.InputStreamReader;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.io.File;
 import java.util.ArrayList;
@@ -84,6 +83,17 @@ public class StudyBuddy {
             }
             sb.append(']').append('}');
             NoteStore.writeAll(FILE, sb.toString());
+        }
+        static void delete(String user, String title, String content){
+            List<Pub> all = load();
+            List<Pub> filtered = new ArrayList<>();
+            for (Pub p : all) {
+                boolean sameUser = p.user != null && p.user.equals(user);
+                boolean sameTitle = p.title != null && p.title.equals(title);
+                boolean sameContent = p.content != null && p.content.equals(content);
+                if (!(sameUser && sameTitle && sameContent)) filtered.add(p);
+            }
+            writeAll(filtered);
         }
     }
 
@@ -500,10 +510,17 @@ static List<Note> notes = new ArrayList<>();
             JLabel title = new JLabel("  StudyBuddy");
             title.setForeground(Color.WHITE);
             title.setFont(title.getFont().deriveFont(Font.BOLD, 18f));
+            javax.swing.ImageIcon appIcon = new javax.swing.ImageIcon("study.png");
+            java.awt.Image _logo = appIcon.getImage().getScaledInstance(24, 24, java.awt.Image.SCALE_SMOOTH);
+            title.setIcon(new javax.swing.ImageIcon(_logo));
+            title.setIconTextGap(8);
+            setIconImage(appIcon.getImage());
             header.add(title, BorderLayout.WEST);
             add(header, BorderLayout.NORTH);
             JPanel form = new JPanel(new GridLayout(2,2,8,8));
-            form.setBorder(new TitledBorder(new LineBorder(accent,1,true), "Inicio de sesión"));
+            javax.swing.border.TitledBorder tb = BorderFactory.createTitledBorder(new LineBorder(accent,1,true), "Inicio de sesión");
+            tb.setTitleColor(accent.darker());
+            form.setBorder(tb);
             form.add(new JLabel("Usuario"));
             form.add(user);
             form.add(new JLabel("Contraseña"));
@@ -514,7 +531,7 @@ static List<Note> notes = new ArrayList<>();
             actions.add(goRegister);
             add(form, BorderLayout.CENTER);
             add(actions, BorderLayout.SOUTH);
-            setSize(420, 220);
+            setSize(460, 240);
             setLocationRelativeTo(owner);
             login.addActionListener(e->{
                 String u = user.getText().trim();
@@ -527,8 +544,8 @@ static List<Note> notes = new ArrayList<>();
                 if(u!=null && !u.isEmpty()){ acceptedUser=u; dispose(); }
             });
         }
-        void stylePrimary(JButton b){ b.setBackground(new Color(22,163,74)); b.setForeground(Color.WHITE); b.setFocusPainted(false); b.setBorder(new LineBorder(new Color(16,120,54),1,true)); }
-        void styleOutline(JButton b){ b.setBackground(Color.WHITE); b.setForeground(new Color(22,163,74)); b.setFocusPainted(false); b.setBorder(new LineBorder(new Color(22,163,74),1,true)); }
+        void stylePrimary(JButton b){ b.setBackground(new Color(22,163,74)); b.setForeground(Color.WHITE); b.setFocusPainted(false); b.setBorder(new LineBorder(new Color(16,120,54),2,true)); b.setMargin(new Insets(10,18,10,18)); b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)); b.addMouseListener(new java.awt.event.MouseAdapter(){ public void mouseEntered(java.awt.event.MouseEvent e){ b.setBackground(new Color(34,180,88)); } public void mouseExited(java.awt.event.MouseEvent e){ b.setBackground(new Color(22,163,74)); } }); }
+        void styleOutline(JButton b){ b.setBackground(Color.WHITE); b.setForeground(new Color(22,163,74)); b.setFocusPainted(false); b.setBorder(new LineBorder(new Color(22,163,74),2,true)); b.setMargin(new Insets(10,18,10,18)); b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)); b.addMouseListener(new java.awt.event.MouseAdapter(){ public void mouseEntered(java.awt.event.MouseEvent e){ b.setBackground(new Color(250,252,255)); } public void mouseExited(java.awt.event.MouseEvent e){ b.setBackground(Color.WHITE); } }); }
         static String prompt(Frame owner){ LoginDialog d = new LoginDialog(owner); d.setVisible(true); return d.acceptedUser; }
     }
     static class RegisterDialog extends JDialog {
@@ -546,10 +563,17 @@ static List<Note> notes = new ArrayList<>();
             JLabel title = new JLabel("  Crear cuenta");
             title.setForeground(Color.WHITE);
             title.setFont(title.getFont().deriveFont(Font.BOLD, 18f));
+            javax.swing.ImageIcon appIcon = new javax.swing.ImageIcon("study.png");
+            java.awt.Image _logo = appIcon.getImage().getScaledInstance(24, 24, java.awt.Image.SCALE_SMOOTH);
+            title.setIcon(new javax.swing.ImageIcon(_logo));
+            title.setIconTextGap(8);
+            setIconImage(appIcon.getImage());
             header.add(title, BorderLayout.WEST);
             add(header, BorderLayout.NORTH);
             JPanel form = new JPanel(new GridLayout(2,2,8,8));
-            form.setBorder(new TitledBorder(new LineBorder(accent,1,true), "Registro"));
+            javax.swing.border.TitledBorder tb2 = BorderFactory.createTitledBorder(new LineBorder(accent,1,true), "Registro");
+            tb2.setTitleColor(accent.darker());
+            form.setBorder(tb2);
             form.add(new JLabel("Usuario")); form.add(user);
             form.add(new JLabel("Contraseña")); form.add(pass);
             JPanel actions = new JPanel(new GridLayout(1,2,8,8));
@@ -557,7 +581,7 @@ static List<Note> notes = new ArrayList<>();
             actions.add(regBtn); actions.add(cancelBtn);
             add(form, BorderLayout.CENTER);
             add(actions, BorderLayout.SOUTH);
-            setSize(420, 220);
+            setSize(460, 240);
             setLocationRelativeTo(owner);
             regBtn.addActionListener(e->{
                 String u = user.getText().trim();
@@ -569,8 +593,8 @@ static List<Note> notes = new ArrayList<>();
             });
             cancelBtn.addActionListener(e->{ dispose(); });
         }
-        void stylePrimary(JButton b){ b.setBackground(new Color(22,163,74)); b.setForeground(Color.WHITE); b.setFocusPainted(false); b.setBorder(new LineBorder(new Color(16,120,54),1,true)); }
-        void styleOutline(JButton b){ b.setBackground(Color.WHITE); b.setForeground(new Color(22,163,74)); b.setFocusPainted(false); b.setBorder(new LineBorder(new Color(22,163,74),1,true)); }
+        void stylePrimary(JButton b){ b.setBackground(new Color(22,163,74)); b.setForeground(Color.WHITE); b.setFocusPainted(false); b.setBorder(new LineBorder(new Color(16,120,54),2,true)); b.setMargin(new Insets(10,18,10,18)); b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)); b.addMouseListener(new java.awt.event.MouseAdapter(){ public void mouseEntered(java.awt.event.MouseEvent e){ b.setBackground(new Color(34,180,88)); } public void mouseExited(java.awt.event.MouseEvent e){ b.setBackground(new Color(22,163,74)); } }); }
+        void styleOutline(JButton b){ b.setBackground(Color.WHITE); b.setForeground(new Color(22,163,74)); b.setFocusPainted(false); b.setBorder(new LineBorder(new Color(22,163,74),2,true)); b.setMargin(new Insets(10,18,10,18)); b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)); b.addMouseListener(new java.awt.event.MouseAdapter(){ public void mouseEntered(java.awt.event.MouseEvent e){ b.setBackground(new Color(250,252,255)); } public void mouseExited(java.awt.event.MouseEvent e){ b.setBackground(Color.WHITE); } }); }
         static String prompt(Window owner){ RegisterDialog d = new RegisterDialog(owner); d.setVisible(true); return d.acceptedUser; }
     }
     interface AiService {
@@ -612,11 +636,26 @@ static List<Note> notes = new ArrayList<>();
         public String summarize(String content, int level){
             String range = level<=1?"60–90":"120–160";
             if (level>=3) range = "200–240";
-            int mt = level<=1?160:(level==2?240:360);
+            int total = level<=1?280:(level==2?480:768);
+            int secondTokens = level>=3?68:60;
+            int mt = Math.max(120, total - secondTokens);
             String prompt = "Resume en español el texto.\n"+
                            "Longitud: " + range + " palabras, conciso y completo.\n"+
-                           "Evita introducción y cierre; enfócate en ideas clave.\n\n" + content;
-            return chat(prompt, mt);
+                           "Evita introducción y cierre; enfócate en ideas clave.\n"+
+                           "Al final añade el marcador <<<FIN>>>.\n\n" + content;
+            String first = chatStop(prompt, mt, "<<<FIN>>>");
+            if (first == null) first = "";
+            boolean done = first.contains("<<<FIN>>>");
+            String agg = first;
+            if (!done) {
+                String contPrompt = "Continúa y finaliza en español el resumen del mismo texto sin repetir. " +
+                        "Cierra con el marcador <<<FIN>>>.\n\n" + content;
+                String second = chatStop(contPrompt, secondTokens, "<<<FIN>>>");
+                if (second != null && !second.trim().isEmpty()) {
+                    agg = (agg + "\n" + second).trim();
+                }
+            }
+            return agg.replace("<<<FIN>>>", "").trim();
         }
         public List<String> keywords(String content, int n){
             String prompt = "Escribe exactamente " + n + " palabras clave en español, separadas por comas, sin explicaciones, del texto.\n\n" + content;
@@ -639,14 +678,14 @@ static List<Note> notes = new ArrayList<>();
         String chat(String prompt, int maxTokens){
             try {
                 lastError = null;
-                URL url = new URL("https://api.groq.com/openai/v1/chat/completions");
+                URL url = java.net.URI.create("https://api.groq.com/openai/v1/chat/completions").toURL();
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Authorization", "Bearer " + apiKey);
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
                 String trimmed = prompt;
-                if (trimmed != null && trimmed.length() > 4000) trimmed = trimmed.substring(0, 4000);
+                if (trimmed != null && trimmed.length() > 8000) trimmed = trimmed.substring(0, 8000);
                 String body = "{"+
                     "\"model\":\"llama-3.1-8b-instant\","+
                     "\"temperature\":0.1,"+
@@ -655,7 +694,7 @@ static List<Note> notes = new ArrayList<>();
                         "\"role\":\"system\",\"content\":\"Responde en español.\"},{"+
                         "\"role\":\"user\",\"content\":\"" + NoteStore.escape(trimmed) + "\"}]}";
                 conn.setConnectTimeout(12000);
-                conn.setReadTimeout(30000);
+                conn.setReadTimeout(45000);
                 conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
                 int code = conn.getResponseCode();
                 java.io.InputStream is = code >= 400 ? conn.getErrorStream() : conn.getInputStream();
@@ -672,6 +711,41 @@ static List<Note> notes = new ArrayList<>();
                 lastError = e.getMessage();
                 return "";
             }
+        }
+        String chatStop(String prompt, int maxTokens, String stop){
+            try {
+                lastError = null;
+                URL url = java.net.URI.create("https://api.groq.com/openai/v1/chat/completions").toURL();
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Authorization", "Bearer " + apiKey);
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setDoOutput(true);
+                String trimmed = prompt;
+                if (trimmed != null && trimmed.length() > 8000) trimmed = trimmed.substring(0, 8000);
+                String body = "{"+
+                    "\"model\":\"llama-3.1-8b-instant\","+
+                    "\"temperature\":0.1,"+
+                    "\"max_tokens\":"+maxTokens+","+
+                    "\"stop\":[\""+stop+"\"],"+
+                    "\"messages\":[{"+
+                        "\"role\":\"system\",\"content\":\"Responde en español.\"},{"+
+                        "\"role\":\"user\",\"content\":\"" + NoteStore.escape(trimmed) + "\"}]}";
+                conn.setConnectTimeout(12000);
+                conn.setReadTimeout(45000);
+                conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
+                int code = conn.getResponseCode();
+                java.io.InputStream is = code >= 400 ? conn.getErrorStream() : conn.getInputStream();
+                BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+                StringBuilder sb = new StringBuilder();
+                String line; while ((line = br.readLine()) != null) sb.append(line);
+                br.close();
+                String json = sb.toString();
+                if (code >= 400) { lastError = "HTTP " + code + ": " + json; return ""; }
+                String content = extractContent(json);
+                if (content == null || content.trim().isEmpty()) { lastError = "Empty response"; return ""; }
+                return content.trim();
+            } catch (Exception e) { lastError = e.getMessage(); return ""; }
         }
         String extractContent(String json){
             java.util.regex.Pattern p = java.util.regex.Pattern.compile("\\\"choices\\\"\\s*:\\s*\\[\\s*\\{[\\s\\S]*?\\\"content\\\"\\s*:\\s*\\\"(.*?)\\\"", java.util.regex.Pattern.DOTALL);
@@ -702,6 +776,8 @@ static List<Note> notes = new ArrayList<>();
         Color danger = new Color(239,68,68);
         public StudyBuddyFrame() {
             setTitle("StudyBuddy – " + (currentUser==null?"Invitado":currentUser));
+            javax.swing.ImageIcon appIcon = new javax.swing.ImageIcon("study.png");
+            setIconImage(appIcon.getImage());
             setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
             setSize(1100, 720);
             setLocationRelativeTo(null);
@@ -716,7 +792,15 @@ static List<Note> notes = new ArrayList<>();
             listScroll.getViewport().setBackground(Color.WHITE);
             JLabel listTitle = new JLabel("Notas");
             listTitle.setFont(listTitle.getFont().deriveFont(Font.BOLD, 16f));
-            left.add(listTitle, BorderLayout.NORTH);
+            JButton newBtn = new JButton("Nueva Nota");
+            stylePrimary(newBtn);
+            JPanel listHeader = new JPanel(new BorderLayout(8,8));
+            listHeader.add(listTitle, BorderLayout.WEST);
+            JTextField filterField = new JTextField();
+            filterField.setToolTipText("Filtrar por título, usuario o texto");
+            listHeader.add(filterField, BorderLayout.CENTER);
+            listHeader.add(newBtn, BorderLayout.EAST);
+            left.add(listHeader, BorderLayout.NORTH);
             DefaultListModel<PublicStore.Pub> pubModel = new DefaultListModel<>();
             JList<PublicStore.Pub> pubList = new JList<>(pubModel);
             JScrollPane pubScroll = new JScrollPane(pubList);
@@ -724,9 +808,22 @@ static List<Note> notes = new ArrayList<>();
             javax.swing.border.TitledBorder pl = BorderFactory.createTitledBorder(new LineBorder(accent,1,true), "Públicas");
             pl.setTitleColor(accent.darker());
             pubScroll.setBorder(pl);
+            JButton delPubBtn = new JButton("Eliminar pública");
+            styleDanger(delPubBtn);
+            JPanel pubPanel = new JPanel(new BorderLayout());
+            JPanel pubToolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT,8,8));
+            JButton importBtn = new JButton("Importar a editor");
+            styleOutline(importBtn);
+            JButton refreshBtn = new JButton("Refrescar");
+            styleOutline(refreshBtn);
+            pubToolbar.add(importBtn);
+            pubToolbar.add(refreshBtn);
+            pubToolbar.add(delPubBtn);
+            pubPanel.add(pubScroll, BorderLayout.CENTER);
+            pubPanel.add(pubToolbar, BorderLayout.SOUTH);
             JPanel listsPanel = new JPanel(new GridLayout(2,1,8,8));
             listsPanel.add(listScroll);
-            listsPanel.add(pubScroll);
+            listsPanel.add(pubPanel);
             left.add(listsPanel, BorderLayout.CENTER);
             JPanel leftActions = new JPanel(new GridLayout(1,4,8,8));
             leftActions.setBorder(BorderFactory.createEmptyBorder(8,8,8,8));
@@ -763,10 +860,8 @@ static List<Note> notes = new ArrayList<>();
             ct.setTitleColor(accent.darker());
             contentScroll.setBorder(ct);
             form.add(contentScroll, BorderLayout.CENTER);
-            JPanel formActions = new JPanel(new GridLayout(1,4,8,8));
+            JPanel formActions = new JPanel(new GridLayout(1,3,8,8));
             formActions.setBorder(BorderFactory.createEmptyBorder(8,8,8,8));
-            JButton newBtn = new JButton("Nueva");
-            formActions.add(newBtn);
             formActions.add(addBtn);
             formActions.add(saveBtn);
             formActions.add(delBtn);
@@ -811,6 +906,9 @@ static List<Note> notes = new ArrayList<>();
             };
             header.setOpaque(true);
             brand.setText("  StudyBuddy – " + (currentUser==null?"Invitado":currentUser));
+            java.awt.Image _logo = appIcon.getImage().getScaledInstance(24, 24, java.awt.Image.SCALE_SMOOTH);
+            brand.setIcon(new javax.swing.ImageIcon(_logo));
+            brand.setIconTextGap(8);
             brand.setForeground(Color.WHITE);
             brand.setFont(brand.getFont().deriveFont(Font.BOLD, 18f));
             header.add(brand, BorderLayout.WEST);
@@ -829,7 +927,8 @@ static List<Note> notes = new ArrayList<>();
             add(status, BorderLayout.SOUTH);
             applyTheme();
             for (Note n : notes) model.addElement(n);
-            for (PublicStore.Pub p : PublicStore.load()) pubModel.addElement(p);
+            java.util.List<PublicStore.Pub> allPubs = new java.util.ArrayList<>(PublicStore.load());
+            for (PublicStore.Pub p : allPubs) pubModel.addElement(p);
             list.setSelectionBackground(accent);
             list.setSelectionForeground(Color.WHITE);
             list.setCellRenderer(new DefaultListCellRenderer(){
@@ -874,11 +973,108 @@ static List<Note> notes = new ArrayList<>();
                     list.clearSelection();
                 }
             });
+            publicCheck.addItemListener(ev -> {
+                boolean v = publicCheck.isSelected();
+                int idx = list.getSelectedIndex();
+                if (idx >= 0) {
+                    Note n = model.get(idx);
+                    n.isPublic = v;
+                    NoteStore.save(notes);
+                    PublicStore.replaceForUser(currentUser, notes);
+                    allPubs.clear();
+                    allPubs.addAll(PublicStore.load());
+                    String q = filterField.getText();
+                    String s = q==null?"":q.trim().toLowerCase();
+                    pubModel.clear();
+                    for (PublicStore.Pub pp : allPubs) {
+                        String uu = pp.user==null?"":pp.user.toLowerCase();
+                        String tt = pp.title==null?"":pp.title.toLowerCase();
+                        String cc = pp.content==null?"":pp.content.toLowerCase();
+                        if (s.isEmpty() || uu.contains(s) || tt.contains(s) || cc.contains(s)) pubModel.addElement(pp);
+                    }
+                    output.setText(v?"Nota marcada como pública":"Nota removida de públicas");
+                    updateStatus();
+                }
+            });
+            javax.swing.event.DocumentListener filter = new javax.swing.event.DocumentListener(){
+                void apply(){
+                    String q = filterField.getText();
+                    String s = q==null?"":q.trim().toLowerCase();
+                    model.clear();
+                    for (Note n : notes) {
+                        String tt = n.title==null?"":n.title.toLowerCase();
+                        String cc = n.content==null?"":n.content.toLowerCase();
+                        if (s.isEmpty() || tt.contains(s) || cc.contains(s)) model.addElement(n);
+                    }
+                    pubModel.clear();
+                    for (PublicStore.Pub p : allPubs) {
+                        String uu = p.user==null?"":p.user.toLowerCase();
+                        String tt = p.title==null?"":p.title.toLowerCase();
+                        String cc = p.content==null?"":p.content.toLowerCase();
+                        if (s.isEmpty() || uu.contains(s) || tt.contains(s) || cc.contains(s)) pubModel.addElement(p);
+                    }
+                    updateStatus();
+                }
+                public void insertUpdate(javax.swing.event.DocumentEvent e){ apply(); }
+                public void removeUpdate(javax.swing.event.DocumentEvent e){ apply(); }
+                public void changedUpdate(javax.swing.event.DocumentEvent e){ apply(); }
+            };
+            filterField.getDocument().addDocumentListener(filter);
+            delPubBtn.addActionListener(e -> {
+                int i = pubList.getSelectedIndex();
+                if (i < 0) { output.setText("Selecciona una nota pública"); return; }
+                PublicStore.Pub p = pubModel.get(i);
+                if (currentUser == null || !currentUser.equals(p.user)) { output.setText("Solo puedes eliminar tus notas públicas"); return; }
+                int res = JOptionPane.showConfirmDialog(this, "¿Eliminar nota pública?", "Confirmar", JOptionPane.OK_CANCEL_OPTION);
+                if (res != JOptionPane.OK_OPTION) return;
+                PublicStore.delete(p.user, p.title, p.content);
+                pubModel.remove(i);
+                allPubs.remove(p);
+                for (Note n : notes) {
+                    String tt = n.title==null?"":n.title;
+                    String cc = n.content==null?"":n.content;
+                    if (tt.equals(p.title) && cc.equals(p.content)) { n.isPublic = false; }
+                }
+                NoteStore.save(notes);
+                PublicStore.replaceForUser(currentUser, notes);
+                output.setText("Nota pública eliminada");
+                publicCheck.setSelected(false);
+                contentField.setEditable(true);
+                updateStatus();
+            });
+            importBtn.addActionListener(e -> {
+                int i = pubList.getSelectedIndex();
+                if (i < 0) { output.setText("Selecciona una nota pública"); return; }
+                PublicStore.Pub p = pubModel.get(i);
+                titleField.setText(p.title);
+                contentField.setText(p.content);
+                publicCheck.setSelected(false);
+                contentField.setEditable(true);
+                list.clearSelection();
+                output.setText("Importado al editor");
+            });
+            refreshBtn.addActionListener(e -> {
+                allPubs.clear();
+                allPubs.addAll(PublicStore.load());
+                filterField.getDocument().putProperty("filter_refresh", Boolean.TRUE);
+                String q = filterField.getText();
+                String s = q==null?"":q.trim().toLowerCase();
+                pubModel.clear();
+                for (PublicStore.Pub p : allPubs) {
+                    String uu = p.user==null?"":p.user.toLowerCase();
+                    String tt = p.title==null?"":p.title.toLowerCase();
+                    String cc = p.content==null?"":p.content.toLowerCase();
+                    if (s.isEmpty() || uu.contains(s) || tt.contains(s) || cc.contains(s)) pubModel.addElement(p);
+                }
+                output.setText("Públicas actualizadas");
+            });
             newBtn.addActionListener(e -> {
                 list.clearSelection();
+                pubList.clearSelection();
                 titleField.setText("");
                 contentField.setText("");
                 publicCheck.setSelected(false);
+                contentField.setEditable(true);
                 output.setText("Nueva nota");
             });
             addBtn.addActionListener(e -> {
@@ -892,6 +1088,17 @@ static List<Note> notes = new ArrayList<>();
                 PublicStore.replaceForUser(currentUser, notes);
                 output.setText("Nota guardada");
                 updateStatus();
+                allPubs.clear();
+                allPubs.addAll(PublicStore.load());
+                String qf = filterField.getText();
+                String sf = qf==null?"":qf.trim().toLowerCase();
+                pubModel.clear();
+                for (PublicStore.Pub pp : allPubs) {
+                    String uu = pp.user==null?"":pp.user.toLowerCase();
+                    String tt = pp.title==null?"":pp.title.toLowerCase();
+                    String cc = pp.content==null?"":pp.content.toLowerCase();
+                    if (sf.isEmpty() || uu.contains(sf) || tt.contains(sf) || cc.contains(sf)) pubModel.addElement(pp);
+                }
             });
             saveBtn.addActionListener(e -> {
                 int i = list.getSelectedIndex();
@@ -907,10 +1114,23 @@ static List<Note> notes = new ArrayList<>();
                 NoteStore.save(notes);
                 PublicStore.replaceForUser(currentUser, notes);
                 output.setText("Cambios guardados");
+                allPubs.clear();
+                allPubs.addAll(PublicStore.load());
+                String qf2 = filterField.getText();
+                String sf2 = qf2==null?"":qf2.trim().toLowerCase();
+                pubModel.clear();
+                for (PublicStore.Pub pp : allPubs) {
+                    String uu = pp.user==null?"":pp.user.toLowerCase();
+                    String tt = pp.title==null?"":pp.title.toLowerCase();
+                    String cc = pp.content==null?"":pp.content.toLowerCase();
+                    if (sf2.isEmpty() || uu.contains(sf2) || tt.contains(sf2) || cc.contains(sf2)) pubModel.addElement(pp);
+                }
             });
             delBtn.addActionListener(e -> {
                 int i = list.getSelectedIndex();
                 if (i < 0) { output.setText("Selecciona una nota"); return; }
+                int res = JOptionPane.showConfirmDialog(this, "¿Eliminar nota?", "Confirmar", JOptionPane.OK_CANCEL_OPTION);
+                if (res != JOptionPane.OK_OPTION) return;
                 Note n = model.get(i);
                 notes.remove(n);
                 model.remove(i);
@@ -921,6 +1141,17 @@ static List<Note> notes = new ArrayList<>();
                 output.setText("Nota eliminada");
                 updateStatus();
             });
+            JComponent root = getRootPane();
+            InputMap rim = root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+            ActionMap ram = root.getActionMap();
+            rim.put(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_N, java.awt.event.InputEvent.CTRL_DOWN_MASK), "newNote");
+            ram.put("newNote", new AbstractAction(){ public void actionPerformed(java.awt.event.ActionEvent e){ newBtn.doClick(); }});
+            rim.put(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_DOWN_MASK), "saveNote");
+            ram.put("saveNote", new AbstractAction(){ public void actionPerformed(java.awt.event.ActionEvent e){ saveBtn.doClick(); }});
+            list.getInputMap().put(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_DELETE, 0), "delPriv");
+            list.getActionMap().put("delPriv", new AbstractAction(){ public void actionPerformed(java.awt.event.ActionEvent e){ delBtn.doClick(); }});
+            pubList.getInputMap().put(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_DELETE, 0), "delPub");
+            pubList.getActionMap().put("delPub", new AbstractAction(){ public void actionPerformed(java.awt.event.ActionEvent e){ delPubBtn.doClick(); }});
             copyBtn.addActionListener(e -> {
                 String t = output.getText();
                 if (t != null && !t.trim().isEmpty()) {
@@ -1031,27 +1262,64 @@ static List<Note> notes = new ArrayList<>();
             styleOutline(sumBtn);
             styleOutline(kwBtn);
             styleOutline(exBtn);
+            Color baseBg = new Color(245,247,250);
+            Color cardBg = Color.WHITE;
+            Color textColor = Color.DARK_GRAY;
+            getContentPane().setBackground(baseBg);
+            list.setBackground(cardBg);
+            list.setForeground(textColor);
+            titleField.setBackground(cardBg);
+            titleField.setForeground(textColor);
+            contentField.setBackground(cardBg);
+            contentField.setForeground(textColor);
+            output.setBackground(cardBg);
+            output.setForeground(textColor);
+            brand.setForeground(Color.WHITE);
         }
-        void stylePrimary(JButton b){
+        void stylePrimary(javax.swing.AbstractButton b){
             b.setBackground(accent);
             b.setForeground(Color.WHITE);
             b.setFocusPainted(false);
             b.setBorder(new LineBorder(accent.darker(), 2, true));
-            b.setMargin(new Insets(10,18,10,18));
+            b.setMargin(new Insets(12,20,12,20));
+            b.setOpaque(true);
+            b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            b.addMouseListener(new java.awt.event.MouseAdapter(){
+                public void mouseEntered(java.awt.event.MouseEvent e){ b.setBackground(accent.brighter()); }
+                public void mouseExited(java.awt.event.MouseEvent e){ b.setBackground(accent); }
+                public void mousePressed(java.awt.event.MouseEvent e){ b.setBackground(accent.darker()); }
+                public void mouseReleased(java.awt.event.MouseEvent e){ b.setBackground(accent); }
+            });
         }
-        void styleOutline(JButton b){
+        void styleOutline(javax.swing.AbstractButton b){
             b.setBackground(Color.WHITE);
             b.setForeground(accent.darker());
             b.setFocusPainted(false);
             b.setBorder(new LineBorder(accent, 2, true));
-            b.setMargin(new Insets(10,18,10,18));
+            b.setMargin(new Insets(12,20,12,20));
+            b.setOpaque(true);
+            b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            b.addMouseListener(new java.awt.event.MouseAdapter(){
+                public void mouseEntered(java.awt.event.MouseEvent e){ b.setBackground(new Color(250,252,255)); }
+                public void mouseExited(java.awt.event.MouseEvent e){ b.setBackground(Color.WHITE); }
+                public void mousePressed(java.awt.event.MouseEvent e){ b.setBackground(accent); b.setForeground(Color.WHITE); }
+                public void mouseReleased(java.awt.event.MouseEvent e){ b.setBackground(Color.WHITE); b.setForeground(accent.darker()); }
+            });
         }
-        void styleDanger(JButton b){
+        void styleDanger(javax.swing.AbstractButton b){
             b.setBackground(danger);
             b.setForeground(Color.WHITE);
             b.setFocusPainted(false);
             b.setBorder(new LineBorder(danger.darker(), 2, true));
-            b.setMargin(new Insets(10,18,10,18));
+            b.setMargin(new Insets(12,20,12,20));
+            b.setOpaque(true);
+            b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            b.addMouseListener(new java.awt.event.MouseAdapter(){
+                public void mouseEntered(java.awt.event.MouseEvent e){ b.setBackground(danger.brighter()); }
+                public void mouseExited(java.awt.event.MouseEvent e){ b.setBackground(danger); }
+                public void mousePressed(java.awt.event.MouseEvent e){ b.setBackground(danger.darker()); }
+                public void mouseReleased(java.awt.event.MouseEvent e){ b.setBackground(danger); }
+            });
         }
         void updateStatus(){
             status.setText("Notas: " + model.getSize() + " • IA: " + (ai instanceof GroqAiService ? "activo" : "inactivo"));
