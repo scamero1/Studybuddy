@@ -574,36 +574,46 @@ static List<Note> notes = new ArrayList<>();
         static String prompt(Window owner){ RegisterDialog d = new RegisterDialog(owner); d.setVisible(true); return d.acceptedUser; }
     }
     interface AiService {
-        String summarize(String content, int max);
+        String summarize(String content, int level);
         List<String> keywords(String content, int n);
-        List<String> exercises(String content);
+        List<String> exercises(String content, int n);
+        String status();
     }
     static class SimpleAiService implements AiService {
-        public String summarize(String content, int max) { return ""; }
+        public String summarize(String content, int level) { return ""; }
         public List<String> keywords(String content, int n) { return new ArrayList<>(); }
-        public List<String> exercises(String content) { return new ArrayList<>(); }
+        public List<String> exercises(String content, int n) { return new ArrayList<>(); }
+        public String status() { return "Disabled"; }
     }
     static class NoAiService implements AiService {
-        public String summarize(String content, int max) { return ""; }
+        public String summarize(String content, int level) { return ""; }
         public List<String> keywords(String content, int n) { return new ArrayList<>(); }
-        public List<String> exercises(String content) { return new ArrayList<>(); }
+        public List<String> exercises(String content, int n) { return new ArrayList<>(); }
+        public String status() { return "No key"; }
     }
     static AiService ai = createAi();
     static AiService createAi(){
-        String key = NoteStore.readAll("../keys/groq.key");
-        if (key == null || key.trim().isEmpty()) key = NoteStore.readAll("keys/groq.key");
+        String key = System.getenv("GROQ_API_KEY");
+        if (key == null || key.trim().isEmpty()) key = System.getProperty("groq.api.key");
         if (key == null || key.trim().isEmpty()) key = NoteStore.readAll("groq.key");
+        if (key == null || key.trim().isEmpty()) key = NoteStore.readAll("keys/groq.key");
         if (key == null || key.trim().isEmpty()) key = NoteStore.readAll("../groq.key");
+        if (key == null || key.trim().isEmpty()) key = NoteStore.readAll("../keys/groq.key");
+        if (key == null || key.trim().isEmpty()) key = NoteStore.readAll("../../groq.key");
+        if (key == null || key.trim().isEmpty()) key = NoteStore.readAll("../../keys/groq.key");
         if (key != null) key = key.trim();
         if (key != null && !key.isEmpty()) return new GroqAiService(key);
         return new NoAiService();
     }
     static class GroqAiService implements AiService {
         final String apiKey;
+        volatile String lastError;
         GroqAiService(String key){ this.apiKey = key; }
-        public String summarize(String content, int max){
-            String prompt = "Resume claramente en español el siguiente texto.\n"+
-                           "Longitud: 120–160 palabras, conciso y completo.\n"+
+        public String summarize(String content, int level){
+            String range = level<=1?"60–90":"120–160";
+            if (level>=3) range = "200–240";
+            String prompt = "Resume en español el texto.\n"+
+                           "Longitud: " + range + " palabras, conciso y completo.\n"+
                            "Evita introducción y cierre; enfócate en ideas clave.\n\n" + content;
             return chat(prompt);
         }
@@ -614,19 +624,19 @@ static List<Note> notes = new ArrayList<>();
             for (String p : out.split(",")) { String t = p.trim(); if (!t.isEmpty()) res.add(t); }
             return res;
         }
-        public List<String> exercises(String content){
-            String prompt = "Genera 5 ejercicios cortos en español basados en el texto.\n"+
-                           "Incluye: definir, explicar y verdadero/falso.\n"+
-                           "Solo lista los ítems, sin soluciones.\n\n" + content;
+        public List<String> exercises(String content, int n){
+            String prompt = "Genera exactamente " + n + " ejercicios en español basados en el texto.\n"+
+                           "Formato: lista simple, una línea por ejercicio, sin introducciones ni títulos, sin soluciones.\n\n" + content;
             String out = chat(prompt);
             List<String> res = new ArrayList<>();
-            String[] lines = out.split("\n");
-            for (String l : lines) { String t = l.trim(); if (!t.isEmpty()) res.add(t.replaceAll("^[-*]\\s*", "")); }
-            if (res.isEmpty()) res.add(out);
+            if (out == null) out = "";
+            res.add(out.trim());
             return res;
         }
+        public String status(){ return lastError==null?"OK":lastError; }
         String chat(String prompt){
             try {
+                lastError = null;
                 URL url = new URL("https://api.groq.com/openai/v1/chat/completions");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
@@ -634,7 +644,7 @@ static List<Note> notes = new ArrayList<>();
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
                 String body = "{"+
-                    "\"model\":\"llama-3.1-70b-versatile\","+
+                    "\"model\":\"llama-3.3-70b-versatile\","+
                     "\"temperature\":0.2,"+
                     "\"max_tokens\":800,"+
                     "\"messages\":[{"+
@@ -650,9 +660,12 @@ static List<Note> notes = new ArrayList<>();
                 String line; while ((line = br.readLine()) != null) sb.append(line);
                 br.close();
                 String json = sb.toString();
+                if (code >= 400) { lastError = "HTTP " + code + ": " + json; return ""; }
                 String content = extractContent(json);
-                return content == null ? "" : content.trim();
+                if (content == null || content.trim().isEmpty()) { lastError = "Empty response"; return ""; }
+                return content.trim();
             } catch (Exception e) {
+                lastError = e.getMessage();
                 return "";
             }
         }
@@ -686,38 +699,49 @@ static List<Note> notes = new ArrayList<>();
         public StudyBuddyFrame() {
             setTitle("StudyBuddy – " + (currentUser==null?"Invitado":currentUser));
             setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-            setSize(900, 600);
+            setSize(1100, 720);
             setLocationRelativeTo(null);
             setLayout(new BorderLayout());
+            Color bg = new Color(245,247,250);
             JPanel left = new JPanel(new BorderLayout(8,8));
             JPanel right = new JPanel(new BorderLayout(8,8));
+            left.setBackground(bg);
+            right.setBackground(bg);
             list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             JScrollPane listScroll = new JScrollPane(list);
+            listScroll.getViewport().setBackground(Color.WHITE);
             JLabel listTitle = new JLabel("Notas");
             listTitle.setFont(listTitle.getFont().deriveFont(Font.BOLD, 16f));
             left.add(listTitle, BorderLayout.NORTH);
-            left.add(listScroll, BorderLayout.CENTER);
+            DefaultListModel<PublicStore.Pub> pubModel = new DefaultListModel<>();
+            JList<PublicStore.Pub> pubList = new JList<>(pubModel);
+            JScrollPane pubScroll = new JScrollPane(pubList);
+            pubScroll.getViewport().setBackground(Color.WHITE);
+            javax.swing.border.TitledBorder pl = BorderFactory.createTitledBorder(new LineBorder(accent,1,true), "Públicas");
+            pl.setTitleColor(accent.darker());
+            pubScroll.setBorder(pl);
+            JPanel listsPanel = new JPanel(new GridLayout(2,1,8,8));
+            listsPanel.add(listScroll);
+            listsPanel.add(pubScroll);
+            left.add(listsPanel, BorderLayout.CENTER);
             JPanel leftActions = new JPanel(new GridLayout(1,4,8,8));
+            leftActions.setBorder(BorderFactory.createEmptyBorder(8,8,8,8));
+            JComboBox<String> sumSize = new JComboBox<>(new String[]{"Corto","Medio","Largo"});
             leftActions.add(sumBtn);
+            leftActions.add(sumSize);
             leftActions.add(kwBtn);
-            leftActions.add(exBtn);
-            JButton pubBtn = new JButton("Públicas");
-            styleOutline(pubBtn);
-            leftActions.add(pubBtn);
-            JButton allBtn = new JButton("Analizar todo");
-            styleOutline(allBtn);
-            JButton editorBtn = new JButton("Analizar editor");
-            styleOutline(editorBtn);
+            leftActions.add(new JLabel(""));
             JPanel leftActionsWrap = new JPanel(new GridLayout(2,1,8,8));
-            JPanel topRow = new JPanel(new GridLayout(1,4,8,8));
+            JPanel topRow = new JPanel(new GridLayout(1,3,8,8));
             topRow.add(sumBtn);
+            topRow.add(sumSize);
             topRow.add(kwBtn);
-            topRow.add(exBtn);
-            topRow.add(pubBtn);
             leftActionsWrap.add(topRow);
-            JPanel bottomRow = new JPanel(new GridLayout(1,2,8,8));
-            bottomRow.add(allBtn);
-            bottomRow.add(editorBtn);
+            JPanel bottomRow = new JPanel(new GridLayout(1,3,8,8));
+            bottomRow.add(exBtn);
+            JSpinner exCount = new JSpinner(new javax.swing.SpinnerNumberModel(5,1,10,1));
+            bottomRow.add(exCount);
+            bottomRow.add(new JLabel(""));
             leftActionsWrap.add(bottomRow);
             left.add(leftActionsWrap, BorderLayout.SOUTH);
             JPanel form = new JPanel(new BorderLayout(8,8));
@@ -731,28 +755,57 @@ static List<Note> notes = new ArrayList<>();
             contentField.setLineWrap(true);
             contentField.setWrapStyleWord(true);
             JScrollPane contentScroll = new JScrollPane(contentField);
-            contentScroll.setBorder(BorderFactory.createTitledBorder("Contenido"));
+            javax.swing.border.TitledBorder ct = BorderFactory.createTitledBorder(new LineBorder(accent,1,true), "Contenido");
+            ct.setTitleColor(accent.darker());
+            contentScroll.setBorder(ct);
             form.add(contentScroll, BorderLayout.CENTER);
             JPanel formActions = new JPanel(new GridLayout(1,4,8,8));
+            formActions.setBorder(BorderFactory.createEmptyBorder(8,8,8,8));
             JButton newBtn = new JButton("Nueva");
             formActions.add(newBtn);
             formActions.add(addBtn);
             formActions.add(saveBtn);
             formActions.add(delBtn);
             form.add(formActions, BorderLayout.SOUTH);
-            right.add(form, BorderLayout.CENTER);
+            JButton copyBtn = new JButton("Copiar");
+            styleOutline(copyBtn);
+            JButton clearBtn = new JButton("Limpiar");
+            styleOutline(clearBtn);
             output.setEditable(false);
+            output.setLineWrap(true);
+            output.setWrapStyleWord(true);
             JScrollPane outScroll = new JScrollPane(output);
-            outScroll.setBorder(BorderFactory.createTitledBorder("Resultados (IA)"));
-            right.add(outScroll, BorderLayout.SOUTH);
+            outScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+            javax.swing.border.TitledBorder ot = BorderFactory.createTitledBorder(new LineBorder(accent,1,true), "Resultados (IA)");
+            ot.setTitleColor(accent.darker());
+            outScroll.setBorder(ot);
+            JPanel outToolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT,8,8));
+            outToolbar.setBorder(BorderFactory.createEmptyBorder(4,8,4,8));
+            outToolbar.add(copyBtn);
+            outToolbar.add(clearBtn);
+            JPanel outPanel = new JPanel(new BorderLayout());
+            outPanel.add(outToolbar, BorderLayout.NORTH);
+            outPanel.add(outScroll, BorderLayout.CENTER);
+            JSplitPane rightSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, form, outPanel);
+            rightSplit.setDividerLocation(480);
+            rightSplit.setContinuousLayout(true);
+            right.add(rightSplit, BorderLayout.CENTER);
             JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, left, right);
-            split.setDividerLocation(320);
+            split.setDividerLocation(360);
             split.setContinuousLayout(true);
             JPanel center = new JPanel(new BorderLayout());
             center.setBorder(BorderFactory.createEmptyBorder(8,8,8,8));
             center.add(split, BorderLayout.CENTER);
-            JPanel header = new JPanel(new BorderLayout());
-            header.setBackground(accent);
+            JPanel header = new JPanel(new BorderLayout()){
+                protected void paintComponent(Graphics g){
+                    super.paintComponent(g);
+                    Graphics2D g2 = (Graphics2D) g;
+                    GradientPaint gp = new GradientPaint(0,0,accent, getWidth(),0, accent.darker());
+                    g2.setPaint(gp);
+                    g2.fillRect(0,0,getWidth(),getHeight());
+                }
+            };
+            header.setOpaque(true);
             brand.setText("  StudyBuddy – " + (currentUser==null?"Invitado":currentUser));
             brand.setForeground(Color.WHITE);
             brand.setFont(brand.getFont().deriveFont(Font.BOLD, 18f));
@@ -760,15 +813,21 @@ static List<Note> notes = new ArrayList<>();
             JPanel headerRight = new JPanel(new FlowLayout(FlowLayout.RIGHT,8,8));
             headerRight.setOpaque(false);
             styleOutline(logoutBtn);
+            JButton testIaBtn = new JButton("Probar IA");
+            styleOutline(testIaBtn);
+            headerRight.add(testIaBtn);
             headerRight.add(logoutBtn);
             header.add(headerRight, BorderLayout.EAST);
             add(header, BorderLayout.NORTH);
             add(center, BorderLayout.CENTER);
-            status.setText("Notas: " + notes.size());
+            status.setText("Notas: " + notes.size() + " • IA: " + (ai instanceof GroqAiService ? "activo" : "inactivo"));
             status.setBorder(BorderFactory.createEmptyBorder(6,10,6,10));
             add(status, BorderLayout.SOUTH);
             applyTheme();
             for (Note n : notes) model.addElement(n);
+            for (PublicStore.Pub p : PublicStore.load()) pubModel.addElement(p);
+            list.setSelectionBackground(accent);
+            list.setSelectionForeground(Color.WHITE);
             list.setCellRenderer(new DefaultListCellRenderer(){
                 public Component getListCellRendererComponent(JList<?> l,Object value,int index,boolean isSelected,boolean cellHasFocus){
                     JLabel c=(JLabel)super.getListCellRendererComponent(l,((Note)value).title,index,isSelected,cellHasFocus);
@@ -786,6 +845,29 @@ static List<Note> notes = new ArrayList<>();
                     titleField.setText(n.title);
                     contentField.setText(n.content);
                     publicCheck.setSelected(n.isPublic);
+                    contentField.setEditable(true);
+                    pubList.clearSelection();
+                }
+            });
+            pubList.setSelectionBackground(accent);
+            pubList.setSelectionForeground(Color.WHITE);
+            pubList.setCellRenderer(new DefaultListCellRenderer(){
+                public Component getListCellRendererComponent(JList<?> l,Object value,int index,boolean isSelected,boolean cellHasFocus){
+                    PublicStore.Pub p = (PublicStore.Pub) value;
+                    JLabel c=(JLabel)super.getListCellRendererComponent(l, p==null?"":(p.user+" • "+p.title), index, isSelected, cellHasFocus);
+                    c.setBorder(BorderFactory.createEmptyBorder(8,10,8,10));
+                    return c;
+                }
+            });
+            pubList.addListSelectionListener(e -> {
+                int i = pubList.getSelectedIndex();
+                if (i >= 0) {
+                    PublicStore.Pub p = pubModel.get(i);
+                    titleField.setText(p.title);
+                    contentField.setText(p.content);
+                    publicCheck.setSelected(true);
+                    contentField.setEditable(false);
+                    list.clearSelection();
                 }
             });
             newBtn.addActionListener(e -> {
@@ -835,12 +917,24 @@ static List<Note> notes = new ArrayList<>();
                 output.setText("Nota eliminada");
                 updateStatus();
             });
+            copyBtn.addActionListener(e -> {
+                String t = output.getText();
+                if (t != null && !t.trim().isEmpty()) {
+                    java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new java.awt.datatransfer.StringSelection(t), null);
+                    status.setText("Copiado al portapapeles • IA: " + (ai instanceof GroqAiService ? "activo" : "inactivo"));
+                }
+            });
+            clearBtn.addActionListener(e -> {
+                output.setText("");
+            });
             sumBtn.addActionListener(e -> {
                 String all = contentField.getText()==null?"":contentField.getText().trim();
                 if (all.isEmpty()) all = NoteStore.corpusCombined();
                 if (all == null || all.trim().isEmpty()) all = corpusLive();
                 status.setText((all==null||all.isEmpty())?"Fuente: vacío":"Fuente: texto ("+all.length()+")");
-                String s = ai.summarize(all, 5);
+                int sel = sumSize.getSelectedIndex();
+                int level = sel<0?1:(sel==0?1:(sel==1?2:3));
+                String s = ai.summarize(all, level);
                 if (s == null || s.trim().isEmpty()) {
                     output.setText("IA no disponible. Verifica tu clave y conexión.");
                 } else {
@@ -864,61 +958,29 @@ static List<Note> notes = new ArrayList<>();
                 if (all.isEmpty()) all = NoteStore.corpusCombined();
                 if (all == null || all.trim().isEmpty()) all = corpusLive();
                 status.setText((all==null||all.isEmpty())?"Fuente: vacío":"Fuente: texto ("+all.length()+")");
-                java.util.List<String> ex = ai.exercises(all);
+                int cnt = ((Integer)exCount.getValue()).intValue();
+                java.util.List<String> ex = ai.exercises(all, cnt);
                 if (ex == null || ex.isEmpty()) {
                     output.setText("IA no disponible. Verifica tu clave y conexión.");
                 } else {
-                    StringBuilder sb = new StringBuilder();
-                    for (int idx = 0; idx < ex.size(); idx++) sb.append((idx + 1)).append(") ").append(ex.get(idx)).append("\n");
-                    output.setText("Ejercicios (IA):\n\n" + sb.toString());
-                }
-            });
-            allBtn.addActionListener(e -> {
-                String all = NoteStore.corpusCombined();
-                if (all == null || all.trim().isEmpty()) all = corpusLive();
-                String s = ai.summarize(all, 5);
-                java.util.List<String> ks = ai.keywords(all, 8);
-                java.util.List<String> ex = ai.exercises(all);
-                if ((s == null || s.trim().isEmpty()) && (ks == null || ks.isEmpty()) && (ex == null || ex.isEmpty())) {
-                    output.setText("IA no disponible. Verifica tu clave y conexión.");
-                } else {
-                    StringBuilder out = new StringBuilder();
-                    if (s != null && !s.trim().isEmpty()) out.append("Resumen (IA):\n\n").append(s).append("\n\n");
-                    if (ks != null && !ks.isEmpty()) out.append("Palabras clave (IA):\n\n").append(String.join(", ", ks)).append("\n\n");
-                    if (ex != null && !ex.isEmpty()) {
-                        out.append("Ejercicios (IA):\n\n");
-                        for (int idx = 0; idx < ex.size(); idx++) out.append((idx + 1)).append(") ").append(ex.get(idx)).append("\n");
+                    String text;
+                    if (ex.size() == 1) {
+                        text = ex.get(0);
+                    } else {
+                        text = String.join("\n", ex);
                     }
-                    output.setText(out.toString());
+                    output.setText("Ejercicios (IA):\n\n" + text);
                 }
             });
-            editorBtn.addActionListener(e -> {
-                String all = contentField.getText()==null?"":contentField.getText().trim();
-                if (all == null || all.isEmpty()) { output.setText("Escribe contenido en el editor"); return; }
-                String s = ai.summarize(all, 5);
-                java.util.List<String> ks = ai.keywords(all, 8);
-                java.util.List<String> ex = ai.exercises(all);
-                if ((s == null || s.trim().isEmpty()) && (ks == null || ks.isEmpty()) && (ex == null || ex.isEmpty())) {
-                    output.setText("IA no disponible. Verifica tu clave y conexión.");
+            // Eliminado botón de diálogo "Públicas"; ahora están integradas en la barra izquierda
+            testIaBtn.addActionListener(e -> {
+                java.util.List<String> ks = ai.keywords("prueba", 1);
+                String st = ai.status();
+                if ("OK".equals(st) && ks != null) {
+                    output.setText("IA: OK");
                 } else {
-                    StringBuilder out = new StringBuilder();
-                    if (s != null && !s.trim().isEmpty()) out.append("Resumen (IA):\n\n").append(s).append("\n\n");
-                    if (ks != null && !ks.isEmpty()) out.append("Palabras clave (IA):\n\n").append(String.join(", ", ks)).append("\n\n");
-                    if (ex != null && !ex.isEmpty()) {
-                        out.append("Ejercicios (IA):\n\n");
-                        for (int idx = 0; idx < ex.size(); idx++) out.append((idx + 1)).append(") ").append(ex.get(idx)).append("\n");
-                    }
-                    output.setText(out.toString());
+                    output.setText("IA error: " + st);
                 }
-            });
-            pubBtn.addActionListener(e -> {
-                java.util.List<PublicStore.Pub> pubs = PublicStore.load();
-                DefaultListModel<String> m = new DefaultListModel<>();
-                for (PublicStore.Pub p : pubs) m.addElement(p.user + " • " + p.title);
-                JList<String> jl = new JList<>(m);
-                JScrollPane sp = new JScrollPane(jl);
-                sp.setPreferredSize(new Dimension(520, 300));
-                JOptionPane.showMessageDialog(this, sp, "Notas públicas", JOptionPane.PLAIN_MESSAGE);
             });
             logoutBtn.addActionListener(e -> {
                 dispose();
@@ -953,12 +1015,12 @@ static List<Note> notes = new ArrayList<>();
             return sb.toString();
         }
         void applyTheme(){
-            Font base = new Font("Segoe UI", Font.PLAIN, 14);
+            Font base = new Font("Segoe UI", Font.PLAIN, 16);
             setFont(base);
             list.setFont(base);
             titleField.setFont(base);
             contentField.setFont(base);
-            output.setFont(new Font("Consolas", Font.PLAIN, 13));
+            output.setFont(new Font("Consolas", Font.PLAIN, 14));
             stylePrimary(addBtn);
             stylePrimary(saveBtn);
             styleDanger(delBtn);
@@ -970,22 +1032,25 @@ static List<Note> notes = new ArrayList<>();
             b.setBackground(accent);
             b.setForeground(Color.WHITE);
             b.setFocusPainted(false);
-            b.setBorder(new LineBorder(accent.darker(), 1, true));
+            b.setBorder(new LineBorder(accent.darker(), 2, true));
+            b.setMargin(new Insets(10,18,10,18));
         }
         void styleOutline(JButton b){
             b.setBackground(Color.WHITE);
             b.setForeground(accent.darker());
             b.setFocusPainted(false);
-            b.setBorder(new LineBorder(accent, 1, true));
+            b.setBorder(new LineBorder(accent, 2, true));
+            b.setMargin(new Insets(10,18,10,18));
         }
         void styleDanger(JButton b){
             b.setBackground(danger);
             b.setForeground(Color.WHITE);
             b.setFocusPainted(false);
-            b.setBorder(new LineBorder(danger.darker(), 1, true));
+            b.setBorder(new LineBorder(danger.darker(), 2, true));
+            b.setMargin(new Insets(10,18,10,18));
         }
         void updateStatus(){
-            status.setText("Notas: " + model.getSize());
+            status.setText("Notas: " + model.getSize() + " • IA: " + (ai instanceof GroqAiService ? "activo" : "inactivo"));
         }
     }
 }
