@@ -79,6 +79,4 @@ Consulte `Transparencia-IA-StudyBuddy.txt` para detalles de qué partes fueron a
 - Pruebas y documentación: `StudyBuddyTests` y este README.
 - Colaboración y GitHub: mantener historial de commits y, si es posible, PRs.
 
-## Llave API Key
--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
 
