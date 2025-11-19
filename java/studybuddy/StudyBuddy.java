@@ -593,10 +593,6 @@ static List<Note> notes = new ArrayList<>();
     }
     static AiService ai = createAi();
     static AiService createAi(){
-        String proxy = System.getenv("GROQ_PROXY_URL");
-        if (proxy == null || proxy.trim().isEmpty()) proxy = System.getProperty("groq.proxy.url");
-        if (proxy != null) proxy = proxy.trim();
-        if (proxy != null && !proxy.isEmpty()) return new ProxyAiService(proxy);
         String key = System.getenv("GROQ_API_KEY");
         if (key == null || key.trim().isEmpty()) key = System.getProperty("groq.api.key");
         if (key == null || key.trim().isEmpty()) key = NoteStore.readAll("groq.key");
@@ -608,60 +604,6 @@ static List<Note> notes = new ArrayList<>();
         if (key != null) key = key.trim();
         if (key != null && !key.isEmpty()) return new GroqAiService(key);
         return new NoAiService();
-    }
-    static class ProxyAiService implements AiService {
-        final String baseUrl;
-        volatile String lastError;
-        ProxyAiService(String url){ this.baseUrl = url; }
-        public String summarize(String content, int level){
-            String range = level<=1?"60–90":"120–160"; if (level>=3) range = "200–240";
-            String prompt = "Resume en español el texto.\nLongitud: " + range + " palabras, conciso y completo.\nEvita introducción y cierre; enfócate en ideas clave.\n\n" + content;
-            return chat(prompt);
-        }
-        public java.util.List<String> keywords(String content, int n){
-            String prompt = "Escribe exactamente " + n + " palabras clave en español, separadas por comas, sin explicaciones, del texto.\n\n" + content;
-            String out = chat(prompt);
-            java.util.List<String> res = new java.util.ArrayList<>();
-            for (String p : out.split(",")) { String t = p.trim(); if (!t.isEmpty()) res.add(t); }
-            return res;
-        }
-        public java.util.List<String> exercises(String content, int n){
-            String prompt = "Genera exactamente " + n + " ejercicios en español basados en el texto.\nFormato: lista simple, una línea por ejercicio, sin introducciones ni títulos, sin soluciones.\n\n" + content;
-            String out = chat(prompt);
-            java.util.List<String> res = new java.util.ArrayList<>(); if (out == null) out = ""; res.add(out.trim()); return res;
-        }
-        public String status(){ return lastError==null?"OK":lastError; }
-        String chat(String prompt){
-            try {
-                lastError = null;
-                java.net.URL url = new java.net.URL(baseUrl);
-                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json");
-                conn.setDoOutput(true);
-                String body = "{" +
-                        "\"prompt\":\"" + NoteStore.escape(prompt) + "\"," +
-                        "\"temperature\":0.2,\"max_tokens\":800}";
-                conn.setConnectTimeout(12000);
-                conn.setReadTimeout(30000);
-                conn.getOutputStream().write(body.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-                int code = conn.getResponseCode();
-                java.io.InputStream is = code >= 400 ? conn.getErrorStream() : conn.getInputStream();
-                java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(is, java.nio.charset.StandardCharsets.UTF_8));
-                StringBuilder sb = new StringBuilder(); String line; while ((line = br.readLine()) != null) sb.append(line); br.close();
-                String json = sb.toString();
-                if (code >= 400) { lastError = "HTTP " + code + ": " + json; return ""; }
-                String content = extractContent(json);
-                if (content == null || content.trim().isEmpty()) { lastError = "Empty response"; return ""; }
-                return content.trim();
-            } catch (Exception e) { lastError = e.getMessage(); return ""; }
-        }
-        String extractContent(String json){
-            java.util.regex.Pattern p1 = java.util.regex.Pattern.compile("\"content\"\s*:\s*\"(.*?)\"", java.util.regex.Pattern.DOTALL);
-            java.util.regex.Matcher m1 = p1.matcher(json);
-            if (m1.find()) return m1.group(1).replace("\\n","\n").replace("\\\"","\"");
-            return null;
-        }
     }
     static class GroqAiService implements AiService {
         final String apiKey;
