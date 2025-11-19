@@ -612,14 +612,15 @@ static List<Note> notes = new ArrayList<>();
         public String summarize(String content, int level){
             String range = level<=1?"60–90":"120–160";
             if (level>=3) range = "200–240";
+            int mt = level<=1?160:(level==2?240:360);
             String prompt = "Resume en español el texto.\n"+
                            "Longitud: " + range + " palabras, conciso y completo.\n"+
                            "Evita introducción y cierre; enfócate en ideas clave.\n\n" + content;
-            return chat(prompt);
+            return chat(prompt, mt);
         }
         public List<String> keywords(String content, int n){
             String prompt = "Escribe exactamente " + n + " palabras clave en español, separadas por comas, sin explicaciones, del texto.\n\n" + content;
-            String out = chat(prompt);
+            String out = chat(prompt, 64);
             List<String> res = new ArrayList<>();
             for (String p : out.split(",")) { String t = p.trim(); if (!t.isEmpty()) res.add(t); }
             return res;
@@ -627,14 +628,15 @@ static List<Note> notes = new ArrayList<>();
         public List<String> exercises(String content, int n){
             String prompt = "Genera exactamente " + n + " ejercicios en español basados en el texto.\n"+
                            "Formato: lista simple, una línea por ejercicio, sin introducciones ni títulos, sin soluciones.\n\n" + content;
-            String out = chat(prompt);
+            int mt = Math.min(240, Math.max(60, n*40));
+            String out = chat(prompt, mt);
             List<String> res = new ArrayList<>();
             if (out == null) out = "";
             res.add(out.trim());
             return res;
         }
         public String status(){ return lastError==null?"OK":lastError; }
-        String chat(String prompt){
+        String chat(String prompt, int maxTokens){
             try {
                 lastError = null;
                 URL url = new URL("https://api.groq.com/openai/v1/chat/completions");
@@ -643,13 +645,15 @@ static List<Note> notes = new ArrayList<>();
                 conn.setRequestProperty("Authorization", "Bearer " + apiKey);
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
+                String trimmed = prompt;
+                if (trimmed != null && trimmed.length() > 4000) trimmed = trimmed.substring(0, 4000);
                 String body = "{"+
-                    "\"model\":\"llama-3.3-70b-versatile\","+
-                    "\"temperature\":0.2,"+
-                    "\"max_tokens\":800,"+
+                    "\"model\":\"llama-3.1-8b-instant\","+
+                    "\"temperature\":0.1,"+
+                    "\"max_tokens\":"+maxTokens+","+
                     "\"messages\":[{"+
                         "\"role\":\"system\",\"content\":\"Responde en español.\"},{"+
-                        "\"role\":\"user\",\"content\":\"" + NoteStore.escape(prompt) + "\"}]}";
+                        "\"role\":\"user\",\"content\":\"" + NoteStore.escape(trimmed) + "\"}]}";
                 conn.setConnectTimeout(12000);
                 conn.setReadTimeout(30000);
                 conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
