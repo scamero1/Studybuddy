@@ -33,7 +33,10 @@ javac -d . java/studybuddy/StudyBuddy.java
 java studybuddy.StudyBuddy
 
 # Opción B: salida en directorio dedicado
+# Linux/macOS:
 mkdir -p java/bin
+# Windows (CMD/PowerShell):
+mkdir java\bin
 javac -d java/bin java/studybuddy/StudyBuddy.java
 java -cp java/bin studybuddy.StudyBuddy
 ```
@@ -48,13 +51,28 @@ java -cp java/bin studybuddy.StudyBuddy
 Actualiza esta tabla con nombres y responsabilidades reales.
 
 | Integrante | Rol | Responsabilidades |
-|---|---|---|
+|## Pruebas
+- Compilar pruebas: `javac -d java/bin java/studybuddy/StudyBuddy.java java/studybuddy/StudyBuddyTests.java`
+- Ejecutar pruebas: `java -cp java/bin studybuddy.StudyBuddyTests`
+- Verificación manual: login/registro, CRUD de notas, marcar como públicas, ver públicas, funciones de resumen, claves y ejercicios con y sin clave de IA. Confirmar actualizaciones en `data/users.json`, `data/notes_<usuario>.json` y `data/public_notes.json`.
+
+## Limitaciones
+- IA opcional; sin clave (`GROQ_API_KEY` o archivo `groq.key`) las funciones retornan vacío y la interfaz lo indica.
+- Persistencia local basada en archivos JSON; no apto para producción sin servidor y controles.
+- Algoritmos de resumen y palabras clave sencillos; sirven como apoyo básico, no sustituyen modelos avanzados.
+
+---|---|---|
 | Sebastián Camero | Líder del proyecto | Coordinación, arquitectura, entregables y Integración Groq|
 | Juan David Giraldo | Lógica/IA |  utilidades, persistencia |
 | Manuela Posso | UI/UX y QA/Docs | Interfaz Swing, usabilidad, pruebas y documentación |
 
-## Transparencia sobre uso de IA
-Consulta `Transparencia-IA-StudyBuddy.txt` para conocer qué partes fueron asistidas por IA y cómo se verificó el funcionamiento.
+## Transparencia y proceso
+- Desarrollo principalmente manual; la IA se usó como apoyo puntual para destrabes de diseño y estructura.
+- Clases y áreas asistidas: `studybuddy.StudyBuddy`, `Note`, `User`, `UserStore`, `NoteStore`, `PublicStore`, `StudyBuddyFrame`.
+- Lógica de estudio asistida: métodos `summarize`, `keywords`, `termFreq`, `scoreSentence`.
+- Integración opcional Groq: interfaces y clases `AiService`, `GroqAiService` para prompts y peticiones HTTP.
+- Pruebas `java/studybuddy/StudyBuddyTests.java` con apoyo en validaciones (hash, JSON roundtrip y flujos básicos).
+- Trabajo en equipo con sesiones presenciales para depurar y organizar el proyecto.
 
 ---
 
