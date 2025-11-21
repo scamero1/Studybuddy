@@ -208,6 +208,21 @@ public class StudyBuddy {
     }
 
 static List<Note> notes = new ArrayList<>();
+static javax.swing.ImageIcon loadAppIcon(){
+    java.net.URL u = StudyBuddy.class.getResource("/study.png");
+    if (u == null) u = StudyBuddy.class.getResource("study.png");
+    if (u != null) return new javax.swing.ImageIcon(u);
+    java.io.File f = new java.io.File("study.png");
+    if (f.exists()) return new javax.swing.ImageIcon(f.getAbsolutePath());
+    f = new java.io.File(System.getProperty("user.dir"), "study.png");
+    if (f.exists()) return new javax.swing.ImageIcon(f.getAbsolutePath());
+    java.awt.image.BufferedImage bi = new java.awt.image.BufferedImage(24,24, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+    java.awt.Graphics2D g2 = bi.createGraphics();
+    g2.setColor(new java.awt.Color(22,163,74));
+    g2.fillOval(4,4,16,16);
+    g2.dispose();
+    return new javax.swing.ImageIcon(bi);
+}
 
     public static void main(String[] args) {
         try {
@@ -510,11 +525,11 @@ static List<Note> notes = new ArrayList<>();
             JLabel title = new JLabel("  StudyBuddy");
             title.setForeground(Color.WHITE);
             title.setFont(title.getFont().deriveFont(Font.BOLD, 18f));
-            javax.swing.ImageIcon appIcon = new javax.swing.ImageIcon("study.png");
-            java.awt.Image _logo = appIcon.getImage().getScaledInstance(24, 24, java.awt.Image.SCALE_SMOOTH);
-            title.setIcon(new javax.swing.ImageIcon(_logo));
-            title.setIconTextGap(8);
-            setIconImage(appIcon.getImage());
+            javax.swing.ImageIcon appIcon = loadAppIcon();
+java.awt.Image _logo = appIcon.getImage().getScaledInstance(24, 24, java.awt.Image.SCALE_SMOOTH);
+title.setIcon(new javax.swing.ImageIcon(_logo));
+title.setIconTextGap(8);
+setIconImage(appIcon.getImage());
             header.add(title, BorderLayout.WEST);
             add(header, BorderLayout.NORTH);
             JPanel form = new JPanel(new GridLayout(2,2,8,8));
@@ -563,11 +578,11 @@ static List<Note> notes = new ArrayList<>();
             JLabel title = new JLabel("  Crear cuenta");
             title.setForeground(Color.WHITE);
             title.setFont(title.getFont().deriveFont(Font.BOLD, 18f));
-            javax.swing.ImageIcon appIcon = new javax.swing.ImageIcon("study.png");
-            java.awt.Image _logo = appIcon.getImage().getScaledInstance(24, 24, java.awt.Image.SCALE_SMOOTH);
-            title.setIcon(new javax.swing.ImageIcon(_logo));
-            title.setIconTextGap(8);
-            setIconImage(appIcon.getImage());
+            javax.swing.ImageIcon appIcon = loadAppIcon();
+java.awt.Image _logo = appIcon.getImage().getScaledInstance(24, 24, java.awt.Image.SCALE_SMOOTH);
+title.setIcon(new javax.swing.ImageIcon(_logo));
+title.setIconTextGap(8);
+setIconImage(appIcon.getImage());
             header.add(title, BorderLayout.WEST);
             add(header, BorderLayout.NORTH);
             JPanel form = new JPanel(new GridLayout(2,2,8,8));
@@ -776,8 +791,8 @@ static List<Note> notes = new ArrayList<>();
         Color danger = new Color(239,68,68);
         public StudyBuddyFrame() {
             setTitle("StudyBuddy – " + (currentUser==null?"Invitado":currentUser));
-            javax.swing.ImageIcon appIcon = new javax.swing.ImageIcon("study.png");
-            setIconImage(appIcon.getImage());
+            javax.swing.ImageIcon appIcon = loadAppIcon();
+setIconImage(appIcon.getImage());
             setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
             setSize(1100, 720);
             setLocationRelativeTo(null);
